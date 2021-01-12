@@ -1,5 +1,5 @@
 class CPU{
-    constructor(monitor,keyboard){
+    constructor(monitor,keyboard,speaker){
         this.memory = new Uint8Array(4096);
         this.v = new Uint8Array(16);
         this.i = 0;
@@ -12,7 +12,7 @@ class CPU{
 
         this.monitor = monitor;
         this.keyboard = keyboard;
-        //this.speaker = speaker;
+        this.speaker = speaker;
         
         this.paused = false;
         this.speed = 10;
@@ -71,6 +71,14 @@ class CPU{
 
         for(let i=0; i<sprites.length; i++){
             this.memory[i] = sprites[i]
+        }
+    }
+
+    playSound() {
+        if (this.soundTimer > 0) {
+            this.speaker.play(440);
+        } else {
+            this.speaker.stop();
         }
     }
 
@@ -158,12 +166,12 @@ class CPU{
                     case 5:
                         let diff = (this.v[x] - this.v[y]);
                         this.v[0xF] = 0;
-                        if(diff > 0){
+                        if(this.v[x] > this.v[y]){
                             this.v[0xF] = 1;
                         }
                         this.v[x] = diff;
                     case 6:
-                        this.v[0xF] = this.v[x] & 0x1;
+                        this.v[0xF] = (this.v[x] & 0x1);
                         this.v[x] >>= 1;
                         break; 
                     case 7:
@@ -188,26 +196,30 @@ class CPU{
                     this.i = (opcode & 0xFFF);
                     break;
                 case 0xB000:
-                    this.pc += (opcode & 0xFFF) + this.v[0];
+                    this.pc += ((opcode & 0xFFF) + this.v[0]);
                 case 0xC000:
                     let rand = Math.floor(Math.random() * 0xFF);
-                    this.v[x] = rand & (opcode & 0xFF);
+                    this.v[x] = (rand & (opcode & 0xFF));
                     break;
                 case 0xD000:
                     let width = 8;
-                    let height = (opcode & 0xF)
+                    let height = (opcode & 0xF);
+
+                    this.v[0xF] =0;
                     
                     for(let row=0; row<height; row++){
+                        
                         let sprite = this.memory[this.i + row];
+                        
                         for(let column=0; column<width; column++){
 
-                            if((sprite & 0x80 >0)){
-                                if(this.monitor.setPixel(this.v[x]+column,this.v[y]+row)){
+                            if((sprite & 0x80) > 0){
+                                if(this.monitor.setPixel(this.v[x]+column, this.v[y]+row)){
                                     this.v[0xF] = 1;
                                 }
                             }
 
-                            sprite << 1;
+                            sprite = sprite << 1;
                         }
                     }
                     break;
@@ -231,7 +243,6 @@ class CPU{
                             break;
                         case 0x0A:
                             this.paused = true;
-
                             this.keyboard.onNextKeyPress = function(key){
                                 this.v[x] = key;
                                 this.paused = false;

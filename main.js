@@ -1,10 +1,12 @@
 import CPU from './src/CPU.js'
 import Monitor from './src/Monitor.js'
 import Keyboard from './src/Keyboard.js';
+import Speaker from './src/Speaker.js'
 
 const monitor = new Monitor(15);
 const keyboard = new Keyboard();
-const cpu = new CPU(monitor,keyboard);
+const speaker = new Speaker();
+const cpu = new CPU(monitor,keyboard,speaker);
 
 let loop;
 
